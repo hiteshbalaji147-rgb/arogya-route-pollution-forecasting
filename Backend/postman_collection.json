@@ -1,0 +1,15 @@
+{
+  "info": {"name":"AQI Backend v2","schema":"https://schema.getpostman.com/json/collection/v2.1.0/collection.json"},
+  "variable":[{"key":"baseUrl","value":"http://127.0.0.1:8000"},{"key":"accessToken","value":""},{"key":"refreshToken","value":""}],
+  "item":[
+    {"name":"Languages","request":{"method":"GET","url":"{{baseUrl}}/auth/languages"}},
+    {"name":"Health conditions","request":{"method":"GET","url":"{{baseUrl}}/auth/health-conditions"}},
+    {"name":"Register","request":{"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\n  \"username\": \"Harsh\",\n  \"email\": \"harsh@example.com\",\n  \"password\": \"StrongPassword123!\",\n  \"age\": 24,\n  \"language_id\": 1,\n  \"has_health_condition\": true,\n  \"condition_ids\": [1]\n}"},"url":"{{baseUrl}}/auth/register"}},
+    {"name":"Login","event":[{"listen":"test","script":{"exec":["pm.test('Login succeeds', () => pm.response.to.have.status(200));","if (pm.response.code === 200) {","  const body = pm.response.json();","  pm.collectionVariables.set('accessToken', body.access_token);","  pm.collectionVariables.set('refreshToken', body.refresh_token);","}"]}}],"request":{"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"email\":\"harsh@example.com\",\"password\":\"StrongPassword123!\"}"},"url":"{{baseUrl}}/auth/login"}},
+    {"name":"Refresh token","event":[{"listen":"test","script":{"exec":["pm.test('Refresh succeeds', () => pm.response.to.have.status(200));","if (pm.response.code === 200) {","  const body = pm.response.json();","  pm.collectionVariables.set('accessToken', body.access_token);","  pm.collectionVariables.set('refreshToken', body.refresh_token);","}"]}}],"request":{"method":"POST","header":[{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"refresh_token\":\"{{refreshToken}}\"}"},"url":"{{baseUrl}}/auth/refresh"}},
+    {"name":"My profile (verify access token)","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"}],"url":"{{baseUrl}}/auth/me"}},
+    {"name":"Recommend route","request":{"method":"POST","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"source\":\"Hyderabad\",\"destination\":\"Bengaluru\",\"start_time\":\"2026-07-24T08:00:00\"}"},"url":"{{baseUrl}}/route/recommend"}},
+    {"name":"Translate for my profile language","request":{"method":"POST","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"},{"key":"Content-Type","value":"application/json"}],"body":{"mode":"raw","raw":"{\"text\":\"Air quality is moderate.\",\"target_language\":\"English\"}"},"url":"{{baseUrl}}/route/translate"}},
+    {"name":"Route history","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{accessToken}}"}],"url":"{{baseUrl}}/route/history"}}
+  ]
+}
