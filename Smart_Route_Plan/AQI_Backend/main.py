@@ -76,4 +76,6 @@ from routes.feedback_routes import router as feedback_router
 app.include_router(feedback_router)
 from routes.admin_routes import router as admin_router
 app.include_router(admin_router)
+from routes.assistant_routes import router as assistant_router
+app.include_router(assistant_router)
 

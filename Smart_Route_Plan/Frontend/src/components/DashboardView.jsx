@@ -4,6 +4,7 @@ import { RoutePlannerForm } from './RoutePlannerForm';
 import { MapContainer }    from './MapContainer';
 import { RouteResults }    from './RouteResults';
 import { FeedbackWidget }  from './FeedbackWidget';
+import { AssistantWidget } from './AssistantWidget';
 import '../user_portal.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
@@ -115,7 +116,7 @@ function RadialAqiGauge({ aqi, status }) {
 }
 
 /* ── TAB 1: DASHBOARD ────────────────────────────────────────────────────── */
-function DashboardTab({ summaryData, userName, onPlanRouteClick, onHealthAdviceClick, t }) {
+function DashboardTab({ summaryData, userName, onPlanRouteClick, onHealthAdviceClick, userCoords, t }) {
   const name = userName || summaryData?.user?.username || 'Harshini';
   const locationName = summaryData?.location?.city || 'Koramangala, Bengaluru';
   const mini = summaryData?.mini_metrics || { temp: '28°C', humidity: '65%', wind: '12 km/h', visibility: '8.2 km', peak_time: '3 PM' };
@@ -236,6 +237,80 @@ function DashboardTab({ summaryData, userName, onPlanRouteClick, onHealthAdviceC
           </div>
         </div>
       </div>
+
+      <AssistantWidget
+        latitude={userCoords?.latitude || summaryData?.location?.latitude}
+        longitude={userCoords?.longitude || summaryData?.location?.longitude}
+        locationName={locationName}
+      />
+    </div>
+  );
+}
+
+function AirNowDashboard({ summaryData, userName, onPlanRouteClick, userCoords, t }) {
+  const locationName = summaryData?.location?.city || 'Bengaluru';
+  const gauge = summaryData?.gauge || { aqi: 53, status: 'Satisfactory' };
+  const mini = summaryData?.mini_metrics || { temp: '28°C', humidity: '65%', wind: '12 km/h', visibility: '8.2 km' };
+  const aqi = Math.round(gauge.aqi || 0);
+  const status = gauge.status || (aqi <= 50 ? 'Good' : 'Moderate');
+  const isRainy = /rain/i.test(summaryData?.weather?.condition || '');
+  const condition = summaryData?.user?.primary_condition || 'your health profile';
+  const tips = aqi > 100
+    ? ['Limit strenuous outdoor activity while AQI is elevated.', `Keep your ${condition.toLowerCase()} medication within reach.`, 'Prefer closed windows and recirculated air near busy roads.']
+    : ['Air quality is satisfactory. Sensitive people may feel minor discomfort.', `Keep your ${condition.toLowerCase()} medication within reach.`, 'Choose quieter roads and take short breaks during outdoor activity.'];
+
+  return (
+    <div className="air-now-view">
+      <div className="air-now-heading">
+        <div>
+          <span className="air-now-kicker">◉&nbsp; RIGHT NOW</span>
+          <h1>{userName || 'Harshini'} <em>— The air where you are</em></h1>
+          <p>Live readings, alerts and safety tips for your health profile — before you decide whether to go out.</p>
+        </div>
+        <div className="aqi-scale" aria-label="AQI scale"><i /><i /><i /><i /><i /><i /></div>
+      </div>
+
+      <section className="air-now-card">
+        <header className="air-now-card-header">
+          <h2>◉&nbsp; Right now</h2>
+          <div className="air-now-location">⌖ <b>{locationName}</b><span>{locationName}, India</span><button aria-label="Edit location">⌕</button><button aria-label="Refresh reading">↻</button></div>
+        </header>
+
+        <div className="air-now-metrics">
+          <div className={`air-aqi-badge ${aqi > 100 ? 'elevated' : ''}`}><strong>{aqi}</strong><span>{status.toUpperCase()}</span></div>
+          <div className="air-metric"><b>♨&nbsp; {mini.temp}</b><span>Light conditions</span></div>
+          <div className="air-metric"><b>♧&nbsp; Humidity <strong>{mini.humidity}</strong></b><span>Humid</span></div>
+          <div className="air-metric"><b>≋&nbsp; Wind <strong>{mini.wind}</strong></b></div>
+          <div className="air-metric"><b>♢&nbsp; Rainfall <strong>{isRainy ? '1 mm' : '0 mm'}</strong></b></div>
+          <div className="air-metric"><b>▧&nbsp; Visibility <strong>{mini.visibility}</strong></b></div>
+        </div>
+
+        <div className="air-section">
+          <h3>▌ ALERTS FOR YOU</h3>
+          <div className="air-alert"><span>ⓘ</span><div><b>{isRainy ? 'It is raining' : 'Conditions are being monitored'}</b><p>{isRainy ? 'Carry an umbrella. Rain often clears particles from the air after a shower.' : 'Your live environmental readings are ready. Check the safety tips before heading out.'}</p></div></div>
+        </div>
+
+        <div className="air-section">
+          <h3>▌ SAFETY TIPS</h3>
+          <div className="air-tip-list">{tips.map((tip) => <div className="air-tip" key={tip}><span>✓</span>{tip}</div>)}</div>
+        </div>
+
+        <div className="air-section carry-section">
+          <h3>▌ WHAT TO CARRY</h3>
+          <div className="carry-grid">
+            <article><span>▱</span><div><b>Face mask</b><p>A mask can reduce exposure on busy routes.</p></div></article>
+            <article><span>▣</span><div><b>Medication</b><p>Keep your usual relief medication nearby.</p></div></article>
+            <article><span>⌂</span><div><b>Water bottle</b><p>Stay comfortable during outdoor travel.</p></div></article>
+          </div>
+        </div>
+
+        <div className="air-now-actions">
+          <button className="air-route-button" onClick={onPlanRouteClick}>⌁&nbsp; Plan a cleaner route</button>
+          <span>Location updated just now</span>
+        </div>
+      </section>
+
+      <AssistantWidget latitude={userCoords?.latitude || summaryData?.location?.latitude} longitude={userCoords?.longitude || summaryData?.location?.longitude} locationName={locationName} />
     </div>
   );
 }
@@ -565,9 +640,9 @@ function SettingsTab({ currentUser, setCurrentUser, t, languageCode, changeLangu
                   style={{
                     padding: '0.45rem 0.85rem',
                     borderRadius: '20px',
-                    border: `1px solid ${isSel ? '#10b981' : 'var(--user-border)'}`,
-                    background: isSel ? 'rgba(16, 185, 129, 0.15)' : 'var(--user-bg)',
-                    color: isSel ? '#10b981' : 'var(--user-text-main)',
+                    border: `1px solid ${isSel ? '#bd65a4' : 'var(--user-border)'}`,
+                    background: isSel ? 'rgba(204, 93, 164, 0.15)' : 'var(--user-bg)',
+                    color: isSel ? '#a74c91' : 'var(--user-text-main)',
                     fontWeight: '700',
                     fontSize: '0.82rem',
                     cursor: 'pointer'
@@ -580,13 +655,13 @@ function SettingsTab({ currentUser, setCurrentUser, t, languageCode, changeLangu
           </div>
         </div>
 
-        {msg && <div style={{ color: '#10b981', fontWeight: '700' }}>{msg}</div>}
+        {msg && <div style={{ color: '#b14e94', fontWeight: '700' }}>{msg}</div>}
 
         <button
           className="banner-btn banner-btn-primary"
           onClick={handleSave}
           disabled={isSaving}
-          style={{ width: '100%', padding: '0.85rem', background: '#046c4e', color: '#ffffff', fontSize: '1rem', marginTop: '0.5rem' }}
+          style={{ width: '100%', padding: '0.85rem', background: '#7540b4', color: '#ffffff', fontSize: '1rem', marginTop: '0.5rem' }}
         >
           {isSaving ? 'Saving...' : t('settings.save', '💾 Save Settings')}
         </button>
@@ -664,10 +739,10 @@ export const DashboardView = ({
   const primaryCondition = currentUser?.health_conditions?.[0] || summaryData?.user?.primary_condition || 'Asthma';
 
   const NAV = [
-    { id: 'dashboard', icon: '📊', label: t('nav.dashboard', 'Dashboard') },
-    { id: 'routes',    icon: '🧭', label: t('nav.router', 'Smart Router') },
-    { id: 'history',   icon: '🕒', label: t('nav.history', 'Route History') },
-    { id: 'settings',  icon: '⚙️', label: t('nav.settings', 'Settings') },
+    { id: 'dashboard', icon: '◉', label: t('nav.dashboard', 'Air now') },
+    { id: 'routes',    icon: '⌁', label: t('nav.router', 'Plan a route') },
+    { id: 'history',   icon: '↶', label: t('nav.history', 'My journeys') },
+    { id: 'settings',  icon: '♙', label: t('nav.settings', 'Profile') },
     { id: 'feedback',  icon: '💬', label: t('nav.feedback', 'Feedback') },
   ];
 
@@ -751,11 +826,12 @@ export const DashboardView = ({
 
         <div className="page-content">
           {activeNav === 'dashboard' && (
-            <DashboardTab
+            <AirNowDashboard
               summaryData={summaryData}
               userName={name}
               onPlanRouteClick={() => setActiveNav('routes')}
               onHealthAdviceClick={() => setActiveNav('routes')}
+              userCoords={userCoords}
               t={t}
             />
           )}

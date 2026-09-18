@@ -97,7 +97,7 @@ export const FeedbackWidget = () => {
         </div>
         <div className="fb-hero-graphic">
           <div className="fb-hero-emoji-stack">
-            <span>💚</span><span>🌿</span><span>✨</span>
+            <span>💗</span><span>🌸</span><span>✨</span>
           </div>
         </div>
       </div>
